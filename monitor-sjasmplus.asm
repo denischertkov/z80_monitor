@@ -171,9 +171,9 @@ notAWrap:
 		LD	(serABufUsed),A
 		CP	SER_FULLSIZE
 		JR	C,rtsA0
-	        LD   	A,$05
+	    LD   	A,$05
 		OUT  	(SIOA_C),A
-	        LD   	A,RTS_HIGH
+	    LD   	A,RTS_HIGH
 		OUT  	(SIOA_C),A
 rtsA0:
 		POP	HL
@@ -198,9 +198,9 @@ notBWrap:
 		LD	(serBBufUsed),A
 		CP	SER_FULLSIZE
 		JR	C,rtsB0
-	        LD   	A,$05
+	    LD   	A,$05
 		OUT  	(SIOB_C),A
-	        LD   	A,RTS_HIGH
+	    LD   	A,RTS_HIGH
 		OUT  	(SIOB_C),A
 rtsB0:
 		POP	HL
@@ -239,10 +239,10 @@ notRdWrapA:
 
 		CP	SER_EMPTYSIZE
 		JR	NC,rtsA1
-	        LD   	A,$05
-		OUT  	(SIOA_C),A
-	        LD   	A,RTS_LOW
-		OUT  	(SIOA_C),A
+	    LD  A,$05
+		OUT (SIOA_C),A
+	    LD  A,RTS_LOW
+		OUT (SIOA_C),A
 rtsA1:
 		LD	A,(HL)
 		EI
@@ -274,10 +274,10 @@ notRdWrapB:
 
 		CP	SER_EMPTYSIZE
 		JR	NC,rtsB1
-	        LD   	A,$05
-		OUT  	(SIOB_C),A
-	        LD   	A,RTS_LOW
-		OUT  	(SIOB_C),A
+	    LD  A,$05
+		OUT (SIOB_C),A
+	    LD  A,RTS_LOW
+		OUT (SIOB_C),A
 rtsB1:
 		LD	A,(HL)
 		EI
@@ -323,7 +323,7 @@ CKSIOA
 		IN   	A,(SIOA_C)	; Status byte D2=TX Buff Empty, D0=RX char ready	
 		RRCA			; Rotates RX status into Carry Flag,	
 		BIT  	1,A		; Set Zero flag if still transmitting character	
-        	RET
+        RET
 
 CKSIOB
 		SUB	A
@@ -331,7 +331,7 @@ CKSIOB
 		IN   	A,(SIOB_C)	; Status byte D2=TX Buff Empty, D0=RX char ready	
 		RRCA			; Rotates RX status into Carry Flag,	
 		BIT  	1,A		; Set Zero flag if still transmitting character	
-        	RET
+        RET
 
 ;------------------------------------------------------------------------------
 ; Check if there is a character in the input buffer
@@ -364,7 +364,7 @@ RDCHR		RST	10H
 		CP	ESC
 		JR	NZ,RDCHR1
 		LD	A,CTRLC		; Change ESC to CTRL-C
-RDCHR1		RET
+RDCHR1	RET
 
 WRCHR		CP	CR
 		JR	Z,WRCRLF	; When CR, write CRLF
@@ -467,11 +467,11 @@ INIT		LD   SP,STACK		; Set the Stack Pointer
 		; Display the "Press space to start" message on both consoles
 		LD	A,$00
 		LD	(primaryIO),A
-    		LD   	HL,INITTXT
+    	LD   	HL,INITTXT
 		CALL 	PRINT
 		LD	A,$01
 		LD	(primaryIO),A
-    		LD   	HL,INITTXT
+    	LD   	HL,INITTXT
 		CALL 	PRINT
 
 		; Wait until space is in one of the buffers to determine the active console
@@ -606,13 +606,13 @@ SETCY		SCF		; Set Carry Flag
 ; This routine converts last four hex characters (0-9 A-F) user types into a value in HL
 ; Rotates the old out and replaces with the new until the user hits a terminating character
 ;------------------------------------------------------------------------------
-GETX		LD   HL,$0000	; CLEAR HL
-GETX1		CALL ECHO	; RX a character from the console
+GETX	LD   HL,$0000	; CLEAR HL
+GETX1	CALL ECHO	; RX a character from the console
 		CP   $0D	; <CR>
 		RET  Z		; quit
 		CP   $2C	; <,> can be used to safely quit for multiple entries
 		RET  Z		; (Like filling both DE and HL from the user)
-GETX2		CP   $03	; Likewise, a <ctrl-C> will terminate clean, too, but
+GETX2	CP   $03	; Likewise, a <ctrl-C> will terminate clean, too, but
 		JR   Z,SETCY	; It also sets the Carry Flag for testing later.
 		ADD  HL,HL	; Otherwise, rotate the previous low nibble to high
 		ADD  HL,HL	; rather slowly
@@ -622,19 +622,19 @@ GETX2		CP   $03	; Likewise, a <ctrl-C> will terminate clean, too, but
 		CP   $0A	; Are we in the 0-9 range?
 		JR   C,GETX3	; Then we just need to sub $30, but if it is A-F
 		SUB  $07	; We need to take off 7 more to get the value down to
-GETX3		AND  $0F	; to the right hex value
+GETX3	AND  $0F	; to the right hex value
 		ADD  A,L	; Add the high nibble to the low
 		LD   L,A	; Move the byte back to A
 		JR   GETX1	; and go back for next character until he terminates
 ;------------------------------------------------------------------------------
 ; Convert ASCII characters in B C registers to a byte value in A
 ;------------------------------------------------------------------------------
-BCTOA		LD   A,B	; Move the hi order byte to A
+BCTOA	LD   A,B	; Move the hi order byte to A
 		SUB  $30	; Take it down from Ascii
 		CP   $0A	; Are we in the 0-9 range here?
 		JR   C,BCTOA1	; If so, get the next nybble
 		SUB  $07	; But if A-F, take it down some more
-BCTOA1		RLCA		; Rotate the nybble from low to high
+BCTOA1	RLCA		; Rotate the nybble from low to high
 		RLCA		; One bit at a time
 		RLCA		; Until we
 		RLCA		; Get there with it
@@ -644,20 +644,20 @@ BCTOA1		RLCA		; Rotate the nybble from low to high
 		CP   $0A	; 0-9 at this point?
 		JR   C,BCTOA2	; Good enough then, but
 		SUB  $07	; Take off 7 more if it's A-F
-BCTOA2		ADD  A,B	; Add in the high order nybble
+BCTOA2	ADD  A,B	; Add in the high order nybble
 		RET
 
 ;------------------------------------------------------------------------------
 ; Get a character and echo it back to the user
 ;------------------------------------------------------------------------------
-ECHO		CALL	RDCHR
+ECHO	CALL	RDCHR
 		CALL	WRCHR
 		RET
 
 ;------------------------------------------------------------------------------
 ; GOTO command
 ;------------------------------------------------------------------------------
-GOTO		CALL GETHL		; ENTRY POINT FOR <G>oto addr. Get XXXX from user.
+GOTO	CALL GETHL		; ENTRY POINT FOR <G>oto addr. Get XXXX from user.
 		RET  C			; Return if invalid       	
 		PUSH HL
 		RET			; Jump to HL address value
@@ -673,7 +673,7 @@ GOTO		CALL GETHL		; ENTRY POINT FOR <G>oto addr. Get XXXX from user.
 ; 6) Checksum Field - Sum of all byte values from Record Length to and 
 ;   including Checksum Field = 0 ]
 ;------------------------------------------------------------------------------	
-LOAD		LD   E,0	; First two Characters is the Record Length Field
+LOAD	LD   E,0	; First two Characters is the Record Length Field
 		CALL GET2	; Get us two characters into BC, convert it to a byte <A>
 		LD   D,A	; Load Record Length count into D
 		CALL GET2	; Get next two characters, Memory Load Address <H>
@@ -689,7 +689,7 @@ LOAD		LD   E,0	; First two Characters is the Record Length Field
 		JR   Z,LOAD00	; Print footer reached message
 		JR   LOADERR	; Checksums don't add up, Error out
 		
-LOAD2		LD   A,D	; Retrieve line character counter	
+LOAD2	LD   A,D	; Retrieve line character counter	
 		AND  A		; Are we done with this line?
 		JR   Z,LOAD3	; Get two more ascii characters, build a byte and checksum
 		CALL GET2	; Get next two chars, convert to byte in A, checksum it
@@ -700,16 +700,16 @@ LOAD2		LD   A,D	; Retrieve line character counter
 		DEC  D		; Decrement line character counter
 		JR   LOAD2	; and keep loading into memory until line is complete
 		
-LOAD3		CALL GET2	; Get two chars, build byte and checksum
+LOAD3	CALL GET2	; Get two chars, build byte and checksum
 		LD   A,E	; Check the checksum value
 		AND  A		; Is it zero?
 		RET  Z
 
-LOADERR		LD   HL,CKSUMERR  ; Get "Checksum Error" message
+LOADERR	LD   HL,CKSUMERR  ; Get "Checksum Error" message
 		CALL PRINT	; Print Message from (HL) and terminate the load
 		RET
 
-LOAD00  	LD   HL,LDETXT	; Print load complete message
+LOAD00  LD   HL,LDETXT	; Print load complete message
 		CALL PRINT
 		RET
 
@@ -717,7 +717,7 @@ LOAD00  	LD   HL,LDETXT	; Print load complete message
 ; Start BASIC command
 ;------------------------------------------------------------------------------
 BASIC
-    		LD HL,BASTXT
+    	LD HL,BASTXT
 		CALL PRINT
 		CALL GETCHR
 		RET Z	; Cancel if CTRL-C
@@ -731,7 +731,7 @@ BASIC
 ;------------------------------------------------------------------------------
 ; Display Help command
 ;------------------------------------------------------------------------------
-HELP   	 	LD   HL,HLPTXT	; Print Help message
+HELP   	LD   HL,HLPTXT	; Print Help message
 		CALL PRINT
 		RET
 	
@@ -739,8 +739,7 @@ HELP   	 	LD   HL,HLPTXT	; Print Help message
 ; CP/M load command
 ;------------------------------------------------------------------------------
 CPMLOAD
-
-    		LD HL,CPMTXT
+    	LD HL,CPMTXT
 		CALL PRINT
 		CALL GETCHR
 		RET Z	; Cancel if CTRL-C
@@ -759,7 +758,7 @@ CPMTXT2
 		DB	$0D,$0A,$00
 
 CPMLOAD2
-    		LD HL,CPMTXT2
+    	LD HL,CPMTXT2
 		CALL PRINT
 
 

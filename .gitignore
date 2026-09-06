@@ -18,3 +18,5 @@ build/
 *~
 *.bak
 *.swp
+.vscode/settings.json
+.vscode/tasks.json

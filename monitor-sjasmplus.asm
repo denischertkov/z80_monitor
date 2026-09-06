@@ -514,25 +514,25 @@ spacePressed:
 ;------------------------------------------------------------------------------
 ; Monitor command loop
 ;------------------------------------------------------------------------------
-MAIN  		LD   HL,MAIN	; Save entry point for Monitor	
-		PUSH HL		; This is the return address
-MAIN0		CALL TXCRLF	; Entry point for Monitor, Normal	
-		LD   A,'>'	; Get a ">"	
-		RST 08H		; print it
+MAIN  	LD   HL,MAIN	; Save entry point for Monitor	
+		PUSH HL			; This is the return address
+MAIN0	CALL TXCRLF		; Entry point for Monitor, Normal	
+		LD   A,'>'		; Get a ">"	
+		RST 08H			; print it
 
-MAIN1		CALL RDCHR	; Get a character from the input port
-		CP   ' '	; <spc> or less? 	
+MAIN1	CALL RDCHR		; Get a character from the input port
+		CP   ' '		; <spc> or less? 	
 		JR   C,MAIN1	; Go back
 	
-		CP   ':'	; ":"?
-		JP   Z,LOAD	; First character of a HEX load
+		CP   ':'		; ":"?
+		JP   Z,LOAD		; First character of a HEX l	oad
 
-		CALL WRCHR	; Print char on console
+		CALL WRCHR		; Print char on console
 
 		CP   '?'
-		JP   Z,HELP
+		JP   Z,	HELP
 
-		AND  $5F	; Make character uppercase
+		AND  $5F		; Make character uppercase
 
 		CP   'R'
 		JP   Z,RST00
@@ -542,6 +542,9 @@ MAIN1		CALL RDCHR	; Get a character from the input port
 
 		CP   'G'
 		JP   Z,GOTO
+
+		CP   'M'
+		JP   Z,MEMDUMP
 
 		CP   'X'
 		JP   Z,CPMLOAD
@@ -553,7 +556,7 @@ MAIN1		CALL RDCHR	; Get a character from the input port
 ;------------------------------------------------------------------------------
 ; Print string of characters to Serial A until byte=$00, WITH CR, LF
 ;------------------------------------------------------------------------------
-PRINT		LD   A,(HL)	; Get character
+PRINT	LD   A,(HL)	; Get character
 		OR   A		; Is it $00 ?
 		RET  Z		; Then RETurn on terminator
 		RST  08H	; Print it
@@ -561,11 +564,54 @@ PRINT		LD   A,(HL)	; Get character
 		JR   PRINT	; Continue until $00
 
 
-TXCRLF		LD   A,$0D	; 
+TXCRLF	LD   A,$0D	; 
 		RST  08H	; Print character 
 		LD   A,$0A	; 
 		RST  08H	; Print character
 		RET
+
+;------------------------------------------------------------------------------
+; Print A as two hexadecimal digits
+;------------------------------------------------------------------------------
+PRINT_HEX8:
+        PUSH AF
+
+        RRCA
+        RRCA
+        RRCA
+        RRCA
+        AND  $0F
+        CALL HEXDIGIT
+
+        POP  AF
+        AND  $0F
+
+HEXDIGIT:
+        ADD  A,'0'
+        CP   '9'+1
+        JR   C,HEXOUT
+
+        ADD  A,7
+
+HEXOUT:
+        RST  08H
+        RET
+
+;------------------------------------------------------------------------------
+; Print HL as four hexadecimal digits
+; HL preserved
+;------------------------------------------------------------------------------
+PRINT_HEX16:
+        PUSH HL
+
+        LD   A,H
+        CALL PRINT_HEX8
+
+        LD   A,L
+        CALL PRINT_HEX8
+
+        POP  HL
+        RET
 
 ;------------------------------------------------------------------------------
 ; Get a character from the console, must be $20-$7F to be valid (no control characters)
@@ -660,7 +706,7 @@ ECHO	CALL	RDCHR
 GOTO	CALL GETHL		; ENTRY POINT FOR <G>oto addr. Get XXXX from user.
 		RET  C			; Return if invalid       	
 		PUSH HL
-		RET			; Jump to HL address value
+		RET				; Jump to HL address value
 
 ;------------------------------------------------------------------------------
 ; LOAD Intel Hex format file from the console.
@@ -712,6 +758,51 @@ LOADERR	LD   HL,CKSUMERR  ; Get "Checksum Error" message
 LOAD00  LD   HL,LDETXT	; Print load complete message
 		CALL PRINT
 		RET
+
+;------------------------------------------------------------------------------
+; Mxxxx - Memory dump
+; Displays 256 bytes starting at address xxxx
+;------------------------------------------------------------------------------
+
+MEMDUMP:
+        CALL GETHL
+        RET  C				; exit if empty address (C-flag set by GETHL)
+
+        LD   B,16           ; 16 lines
+
+MEMDUMP_LINE:
+        PUSH BC
+
+        ; address
+        CALL PRINT_HEX16
+
+        LD   A,':'
+        RST  08H
+
+        LD   A,' '
+        RST  08H
+
+        ; 16 bytes
+        LD   C,16
+
+MEMDUMP_BYTE:
+        LD   A,(HL)
+        CALL PRINT_HEX8
+
+        LD   A,' '
+        RST  08H
+
+        INC  HL
+
+        DEC  C
+        JR   NZ,MEMDUMP_BYTE
+
+        CALL TXCRLF
+
+        POP  BC
+        DJNZ MEMDUMP_LINE
+
+        RET
 
 ;------------------------------------------------------------------------------
 ; Start BASIC command
@@ -903,7 +994,9 @@ HLPTXT
 		DB	$0D,$0A
 		DB	":nnnnnn...  - Load Intel-Hex file record"
 		DB	$0D,$0A
-        	DB   $00
+        DB  "Mxxxx       - Memory dump"
+        DB  $0D,$0A
+		DB   $00
 
 ; ------------------------------------------------------------------------------
 ; Fill unused ROM space up to 4000h with erased EPROM value

@@ -1,0 +1,20 @@
+# Build results
+build/
+**/build/
+
+# Generated binaries
+*.bin
+*.hex
+*.lst
+*.sym
+
+# Editor
+.vscode/*
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Backup/temp
+*~
+*.bak
+*.swp

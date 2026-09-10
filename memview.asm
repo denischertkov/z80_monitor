@@ -177,7 +177,7 @@ draw_page:
         ; Display base address in heading
 
         ld hl,(baseaddr)
-        call hex16
+        call PRINT_HEX16
 
         ld hl,title2
         call print
@@ -196,7 +196,7 @@ line_loop:
 
         ; Address
 
-        call hex16
+        call PRINT_HEX16
 
         ld a,':'
         rst 08h
@@ -213,7 +213,7 @@ line_loop:
 
 hex_loop:
         ld a,(hl)
-        call hex8
+        call PRINT_HEX8
 
         ld a,' '
         rst 08h
@@ -294,44 +294,44 @@ ascii_out:
 
         ret
 
+; USED PROCEDURES FROM MONITOR
+; ; ---------------------------------------------------------
+; ; Print HL as four HEX digits
+; ;
+; ; HL is preserved.
+; ; ---------------------------------------------------------
 
-; ---------------------------------------------------------
-; Print HL as four HEX digits
-;
-; HL is preserved.
-; ---------------------------------------------------------
+; hex16:
+;         push hl
 
-hex16:
-        push hl
+;         ld a,h
+;         call hex8
 
-        ld a,h
-        call hex8
+;         ld a,l
+;         call hex8
 
-        ld a,l
-        call hex8
-
-        pop hl
-        ret
+;         pop hl
+;         ret
 
 
-; ---------------------------------------------------------
-; Print A as two HEX digits
-; ---------------------------------------------------------
+; ; ---------------------------------------------------------
+; ; Print A as two HEX digits
+; ; ---------------------------------------------------------
 
-hex8:
-        push af
+; hex8:
+;         push af
 
-        rrca
-        rrca
-        rrca
-        rrca
+;         rrca
+;         rrca
+;         rrca
+;         rrca
 
-        and 0fh
-        call hex_digit
+;         and 0fh
+;         call hex_digit
 
-        pop af
+;         pop af
 
-        and 0fh
+;         and 0fh
 
 
 hex_digit:

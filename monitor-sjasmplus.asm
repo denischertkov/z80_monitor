@@ -617,7 +617,7 @@ PRINT_HEX16:
 ; Get a character from the console, must be $20-$7F to be valid (no control characters)
 ; <Ctrl-c> and <SPACE> breaks with the Zero Flag set
 ;------------------------------------------------------------------------------	
-GETCHR		CALL RDCHR	; RX a Character
+GETCHR	CALL RDCHR	; RX a Character
 		CP   $03	; <ctrl-c> User break?
 		RET  Z			
 		CP   $20	; <space> or better?
@@ -628,7 +628,7 @@ GETCHR		CALL RDCHR	; RX a Character
 ; Moves them into B and C, converts them into a byte value in A and updates a
 ; Checksum value in E
 ;------------------------------------------------------------------------------
-GET2		CALL GETCHR	; Get us a valid character to work with
+GET2	CALL GETCHR	; Get us a valid character to work with
 		LD   B,A	; Load it in B
 		CALL GETCHR	; Get us another character
 		LD   C,A	; load it in C
@@ -642,11 +642,11 @@ GET2		CALL GETCHR	; Get us a valid character to work with
 ;------------------------------------------------------------------------------
 ; Gets four Hex characters from the console, converts them to values in HL
 ;------------------------------------------------------------------------------
-GETHL		LD   HL,$0000	; Gets xxxx but sets Carry Flag on any Terminator
-		CALL ECHO	; RX a Character
-		CP   $0D	; <CR>?
+GETHL	LD   HL,$0000	; Gets xxxx but sets Carry Flag on any Terminator
+		CALL ECHO		; RX a Character
+		CP   $0D		; <CR>?
 		JR   NZ,GETX2	; other key		
-SETCY		SCF		; Set Carry Flag
+SETCY	SCF				; Set Carry Flag
 		RET             ; and Return to main program		
 ;------------------------------------------------------------------------------
 ; This routine converts last four hex characters (0-9 A-F) user types into a value in HL
@@ -759,50 +759,50 @@ LOAD00  LD   HL,LDETXT	; Print load complete message
 		CALL PRINT
 		RET
 
-;------------------------------------------------------------------------------
-; Mxxxx - Memory dump
-; Displays 256 bytes starting at address xxxx
-;------------------------------------------------------------------------------
+; ;------------------------------------------------------------------------------
+; ; Mxxxx - Memory dump
+; ; Displays 256 bytes starting at address xxxx
+; ;------------------------------------------------------------------------------
 
-MEMDUMP:
-        CALL GETHL
-        RET  C				; exit if empty address (C-flag set by GETHL)
+; MEMDUMP:
+;         CALL GETHL
+;         RET  C				; exit if empty address (C-flag set by GETHL)
 
-        LD   B,16           ; 16 lines
+;         LD   B,16           ; 16 lines
 
-MEMDUMP_LINE:
-        PUSH BC
+; MEMDUMP_LINE:
+;         PUSH BC
 
-        ; address
-        CALL PRINT_HEX16
+;         ; address
+;         CALL PRINT_HEX16
 
-        LD   A,':'
-        RST  08H
+;         LD   A,':'
+;         RST  08H
 
-        LD   A,' '
-        RST  08H
+;         LD   A,' '
+;         RST  08H
 
-        ; 16 bytes
-        LD   C,16
+;         ; 16 bytes
+;         LD   C,16
 
-MEMDUMP_BYTE:
-        LD   A,(HL)
-        CALL PRINT_HEX8
+; MEMDUMP_BYTE:
+;         LD   A,(HL)
+;         CALL PRINT_HEX8
 
-        LD   A,' '
-        RST  08H
+;         LD   A,' '
+;         RST  08H
 
-        INC  HL
+;         INC  HL
 
-        DEC  C
-        JR   NZ,MEMDUMP_BYTE
+;         DEC  C
+;         JR   NZ,MEMDUMP_BYTE
 
-        CALL TXCRLF
+;         CALL TXCRLF
 
-        POP  BC
-        DJNZ MEMDUMP_LINE
+;         POP  BC
+;         DJNZ MEMDUMP_LINE
 
-        RET
+;         RET
 
 ;------------------------------------------------------------------------------
 ; Start BASIC command
@@ -998,10 +998,11 @@ HLPTXT
         DB  $0D,$0A
 		DB   $00
 
+		include 'memview.asm'
+
 ; ------------------------------------------------------------------------------
 ; Fill unused ROM space up to 4000h with erased EPROM value
 ; ------------------------------------------------------------------------------
 
         DS $4000-$, $FF
 ; END
-

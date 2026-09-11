@@ -89,6 +89,7 @@ dmaAddr        EQU secNo + 1
 
 stackSpace     EQU dmaAddr + 2
 STACK          EQU stackSpace + 32
+baseaddr	   EQU STACK + 2				; memview base address variable
 
 
 ;------------------------------------------------------------------------------

@@ -25,6 +25,7 @@
 MEMDUMP:
         CALL GETHL
         RET  C				; exit if empty address (C-flag set by GETHL)
+        LD (baseaddr),HL
 
 main_view:
         call draw_page
@@ -418,8 +419,8 @@ escape_pgdown:
 ; Variables
 ; ---------------------------------------------------------
 
-baseaddr:
-        dw 0000h
+; baseaddr:
+;         dw 0000h
 
 
 ; ---------------------------------------------------------

@@ -720,37 +720,124 @@ GOTO	CALL GETHL		; ENTRY POINT FOR <G>oto addr. Get XXXX from user.
 ; 6) Checksum Field - Sum of all byte values from Record Length to and 
 ;   including Checksum Field = 0 ]
 ;------------------------------------------------------------------------------	
-LOAD	LD   E,0	; First two Characters is the Record Length Field
-		CALL GET2	; Get us two characters into BC, convert it to a byte <A>
-		LD   D,A	; Load Record Length count into D
-		CALL GET2	; Get next two characters, Memory Load Address <H>
-		LD   H,A	; put value in H register.
-		CALL GET2	; Get next two characters, Memory Load Address <L>
-		LD   L,A	; put value in L register.
-		CALL GET2	; Get next two characters, Record Field Type
-		CP   $01	; Record Field Type 00 is Data, 01 is End of File
-		JR   NZ,LOAD2	; Must be the end of that file
-		CALL GET2	; Get next two characters, assemble into byte
-		LD   A,E	; Recall the Checksum byte
-		AND  A		; Is it Zero?
-		JR   Z,LOAD00	; Print footer reached message
-		JR   LOADERR	; Checksums don't add up, Error out
-		
-LOAD2	LD   A,D	; Retrieve line character counter	
-		AND  A		; Are we done with this line?
-		JR   Z,LOAD3	; Get two more ascii characters, build a byte and checksum
-		CALL GET2	; Get next two chars, convert to byte in A, checksum it
-		LD   (HL),A	; Move converted byte in A to memory location
-		INC  HL		; Increment pointer to next memory location	
-		LD   A,'.'	; Print out a "." for every byte loaded
-		RST  08H	;
-		DEC  D		; Decrement line character counter
-		JR   LOAD2	; and keep loading into memory until line is complete
-		
-LOAD3	CALL GET2	; Get two chars, build byte and checksum
-		LD   A,E	; Check the checksum value
-		AND  A		; Is it zero?
-		RET  Z
+;------------------------------------------------------------------------------
+; LOAD Intel HEX format file from console
+;
+; Supported:
+;   type 00 - DATA, write to memory
+;   type 01 - EOF
+;
+; Other record types (02,03,04,05...) are read and checksum-checked,
+; but NOT written to memory.
+;------------------------------------------------------------------------------
+
+LOAD:
+        LD   E,0            ; checksum accumulator
+
+        ; Record length
+        CALL GET2
+        LD   D,A            ; D = number of data bytes
+
+        ; Load address high byte
+        CALL GET2
+        LD   H,A
+
+        ; Load address low byte
+        CALL GET2
+        LD   L,A
+
+        ; Record type
+        CALL GET2
+
+        CP   $00            ; DATA record?
+        JR   Z,LOAD2
+
+        CP   $01            ; EOF record?
+        JR   Z,LOAD_EOF
+
+        ; Any other Intel HEX record type:
+        ; consume it, but DO NOT write to RAM
+        JR   LOAD_SKIP
+
+;------------------------------------------------------------------------------
+; Type 00 - DATA record
+; D  = number of bytes
+; HL = destination address
+;------------------------------------------------------------------------------
+
+LOAD2:
+        LD   A,D
+        AND  A
+        JR   Z,LOAD3
+
+        CALL GET2           ; get next data byte
+        LD   (HL),A         ; write it to memory
+        INC  HL
+
+        LD   A,'.'
+        RST  08H
+
+        DEC  D
+        JR   LOAD2
+
+
+;------------------------------------------------------------------------------
+; End of DATA record - read and verify checksum
+;------------------------------------------------------------------------------
+
+LOAD3:
+        CALL GET2           ; checksum byte
+
+        LD   A,E
+        AND  A
+        RET  Z              ; checksum OK
+
+        JR   LOADERR
+
+
+;------------------------------------------------------------------------------
+; Type 01 - End Of File
+;------------------------------------------------------------------------------
+
+LOAD_EOF:
+        CALL GET2           ; checksum byte
+
+        LD   A,E
+        AND  A
+        JR   Z,LOAD00       ; checksum OK, print "Load complete."
+
+        JR   LOADERR
+
+
+;------------------------------------------------------------------------------
+; Unsupported Intel HEX record type
+;
+; Important: read all data bytes so the serial stream remains synchronized,
+; but do NOT write them to memory.
+;------------------------------------------------------------------------------
+
+LOAD_SKIP:
+        LD   A,D
+        AND  A
+        JR   Z,LOAD_SKIP_CHECKSUM
+
+
+LOAD_SKIP_LOOP:
+        CALL GET2           ; read byte, update checksum
+                            ; but DON'T do LD (HL),A
+
+        DEC  D
+        JR   NZ,LOAD_SKIP_LOOP
+
+
+LOAD_SKIP_CHECKSUM:
+        CALL GET2           ; read checksum byte
+
+        LD   A,E
+        AND  A
+        RET  Z              ; record ignored, checksum OK
+
+        JR   LOADERR
 
 LOADERR	LD   HL,CKSUMERR  ; Get "Checksum Error" message
 		CALL PRINT	; Print Message from (HL) and terminate the load

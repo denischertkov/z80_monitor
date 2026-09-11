@@ -24,7 +24,8 @@
 ;         ld (baseaddr),hl
 MEMDUMP:
         CALL GETHL
-        RET  C				; exit if empty address (C-flag set by GETHL)
+        RET C				; exit if empty address (C-flag set by GETHL)
+        LD L,00h                        ; round the address down to the start of a 256-byte page
         LD (baseaddr),HL
 
 main_view:

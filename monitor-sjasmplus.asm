@@ -1051,6 +1051,7 @@ cfWait1:
 SIGNON	DB	"Z80 SBC Boot ROM 1.1"
 		DB	" by G. Searle"
 		DB	$0D,$0A
+		INCLUDE "build_info.inc"			; add the build info string
 		DB	"Type ? for options"
 		DB	$0D,$0A,$00
 

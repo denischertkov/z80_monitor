@@ -25,6 +25,16 @@ LOADER_HEX=build/rom_loader.hex
 
 mkdir -p build
 
+echo "Build info updating..."
+
+BUILD_DATE=$(date '+%Y-%m-%d')
+BUILD_TIME=$(date '+%H:%M:%S')
+
+cat > build_info.inc <<EOF
+BUILD_INFO:
+        DB "Build: $BUILD_DATE $BUILD_TIME",13,10,0
+EOF
+
 echo "Assembling Monitor..."
 
 sjasmplus \

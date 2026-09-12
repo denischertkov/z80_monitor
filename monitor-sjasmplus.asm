@@ -1,16 +1,8 @@
 ;==================================================================================
-; Contents of this file are copyright Grant Searle
-; HEX routines from Joel Owens.
-;
-; You have permission to use this for NON COMMERCIAL USE ONLY
-; If you wish to use it elsewhere, please include an acknowledgement to myself.
-;
-; http://searle.hostei.com/grant/index.html
-;
-; eMail: home.micros01@btinternet.com
-;
-; If the above don't work, please perform an Internet search to see if I have
-; updated the web page hosting service.
+; Based on the original Z80 Monitor Rom by Grant Searle (http://searle.hostei.com/grant/index.html)
+; Added the new memory viewer and build info string to the signon message.
+; Fix Intel HEX loading for non-data record types (0000h and 0001h RAM address corruption).
+; Denis Chertkov, denis@chertkov.info, 20260912
 ;
 ;==================================================================================
 
@@ -291,7 +283,7 @@ rtsB1:
 ; Console output routine
 ; Use the "primaryIO" flag to determine which output port to send a character.
 ;------------------------------------------------------------------------------
-conout:		PUSH	AF		; Store character
+conout:	PUSH	AF		; Store character
 		LD	A,(primaryIO)
 		CP	0
 		JR	NZ,conoutB1
@@ -359,7 +351,7 @@ ckincharB:
 ; Filtered Character I/O
 ;------------------------------------------------------------------------------
 
-RDCHR		RST	10H
+RDCHR	RST	10H
 		CP	LF
 		JR	Z,RDCHR		; Ignore LF
 		CP	ESC
@@ -367,7 +359,7 @@ RDCHR		RST	10H
 		LD	A,CTRLC		; Change ESC to CTRL-C
 RDCHR1	RET
 
-WRCHR		CP	CR
+WRCHR	CP	CR
 		JR	Z,WRCRLF	; When CR, write CRLF
 		CP	CLS
 		JR	Z,WR		; Allow write of "CLS"
@@ -376,7 +368,7 @@ WRCHR		CP	CR
 WR		RST	08H
 NOWR		RET
 
-WRCRLF		LD	A,CR
+WRCRLF	LD	A,CR
 		RST	08H
 		LD	A,LF
 		RST	08H
@@ -387,7 +379,7 @@ WRCRLF		LD	A,CR
 ;------------------------------------------------------------------------------
 ; Initialise hardware and start main loop
 ;------------------------------------------------------------------------------
-INIT		LD   SP,STACK		; Set the Stack Pointer
+INIT	LD   SP,STACK		; Set the Stack Pointer
 
 		LD	HL,serABuf
 		LD	(serAInPtr),HL
@@ -847,51 +839,6 @@ LOAD00  LD   HL,LDETXT	; Print load complete message
 		CALL PRINT
 		RET
 
-; ;------------------------------------------------------------------------------
-; ; Mxxxx - Memory dump
-; ; Displays 256 bytes starting at address xxxx
-; ;------------------------------------------------------------------------------
-
-; MEMDUMP:
-;         CALL GETHL
-;         RET  C				; exit if empty address (C-flag set by GETHL)
-
-;         LD   B,16           ; 16 lines
-
-; MEMDUMP_LINE:
-;         PUSH BC
-
-;         ; address
-;         CALL PRINT_HEX16
-
-;         LD   A,':'
-;         RST  08H
-
-;         LD   A,' '
-;         RST  08H
-
-;         ; 16 bytes
-;         LD   C,16
-
-; MEMDUMP_BYTE:
-;         LD   A,(HL)
-;         CALL PRINT_HEX8
-
-;         LD   A,' '
-;         RST  08H
-
-;         INC  HL
-
-;         DEC  C
-;         JR   NZ,MEMDUMP_BYTE
-
-;         CALL TXCRLF
-
-;         POP  BC
-;         DJNZ MEMDUMP_LINE
-
-;         RET
-
 ;------------------------------------------------------------------------------
 ; Start BASIC command
 ;------------------------------------------------------------------------------
@@ -1048,8 +995,8 @@ cfWait1:
 
 ;------------------------------------------------------------------------------
 
-SIGNON	DB	"Z80 SBC Boot ROM 1.1"
-		DB	" by G. Searle"
+SIGNON	DB	"Z80 SBC Boot ROM 1.2"
+		DB	" by G. Searle / D. Chertkov"
 		DB	$0D,$0A
 		INCLUDE "build_info.inc"			; add the build info string
 		DB	"Type ? for options"

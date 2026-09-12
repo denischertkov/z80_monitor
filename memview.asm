@@ -8,20 +8,15 @@
 ;   N or SPACE - next 256 bytes
 ;   P          - previous 256 bytes
 ;   G          - goto address
-;   Q          - return to monitor
+;   Q          - return to Monitor
 ;
+; Denis Chertkov, denis@chertkov.info, 20260912
 ; =========================================================
 
-        ; org 8000h
-
-
 ; ---------------------------------------------------------
-; Entry point
+; Entry point called from Monitor
 ; ---------------------------------------------------------
  
-; start:
-;         ld hl,0000h
-;         ld (baseaddr),hl
 MEMDUMP:
         CALL GETHL
         RET C				; exit if empty address (C-flag set by GETHL)
@@ -435,7 +430,7 @@ cls:
 
 
 title:
-        db "Z80 MEMORY VIEWER from KoloBok-26 project",13,10
+        db "Z80 MEMORY VIEWER by Denis@Chertkov.info",13,10
         db "PAGE: ",0
 
 

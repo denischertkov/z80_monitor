@@ -1,7 +1,7 @@
 ; BIOS ROM loader
 ;
 ; This program disable the ROM on 0000-3FFF and copy to this place the image from 5000-8FFF
-; At the end it jumps to 0000 to start the new monitor
+; At the end it jumps to 0000 to start the new monitor from RAM
 ;
 ; Denis Chertkov, denis@chertkov.info ,20260911
 

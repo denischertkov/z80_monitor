@@ -515,7 +515,7 @@ Recommended workflow:
 ```bash
 # Edit Monitor source
 
-./test-monitor.sh
+./test_new_monitor.sh
 ```
 
 Then test:
@@ -523,7 +523,16 @@ Then test:
 ```text
 ?
 M0000
-M4000
+```
+
+You should see the `RAM` string on the first line:
+
+```
+Z80 MEMORY VIEWER by Denis@Chertkov.info
+PAGE: 0000h
+
+0000: F3 C3 8A 01 00 00 00 00 C3 24 01 00 00 52 41 4D   .........$...RAM
+0010: C3 C0 00 00 00 00 00 00 C3 54 01 FF FF FF FF FF   .........T......
 ```
 
 For testing the Intel HEX loader, load a HEX file containing an Extended Linear Address record such as:
@@ -586,7 +595,9 @@ Compared with the original Monitor, this version currently includes:
 
 Original Z80 Monitor:
 
-**Grant Searle**
+**Grant Searle** 
+
+http://searle.hostei.com/grant/index.html
 
 The original source copyright and non-commercial-use notice are preserved in the Monitor source.
 
@@ -596,3 +607,5 @@ Additional modifications include:
 - Intel HEX loader fixes;
 - memory viewer;
 - RAM-based Monitor test workflow.
+
+Denis Chertkov, denis@chertkov.info, 20260912

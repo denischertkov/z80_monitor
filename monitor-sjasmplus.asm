@@ -1,16 +1,8 @@
 ;==================================================================================
-; Contents of this file are copyright Grant Searle
-; HEX routines from Joel Owens.
-;
-; You have permission to use this for NON COMMERCIAL USE ONLY
-; If you wish to use it elsewhere, please include an acknowledgement to myself.
-;
-; http://searle.hostei.com/grant/index.html
-;
-; eMail: home.micros01@btinternet.com
-;
-; If the above don't work, please perform an Internet search to see if I have
-; updated the web page hosting service.
+; Based on the original Z80 Monitor Rom by Grant Searle (http://searle.hostei.com/grant/index.html)
+; Added the new memory viewer and build info string to the signon message.
+; Fix Intel HEX loading for non-data record types (0000h and 0001h RAM address corruption).
+; Denis Chertkov, denis@chertkov.info, 20260912
 ;
 ;==================================================================================
 
@@ -89,6 +81,7 @@ dmaAddr        EQU secNo + 1
 
 stackSpace     EQU dmaAddr + 2
 STACK          EQU stackSpace + 32
+baseaddr	   EQU STACK + 2				; memview base address variable
 
 
 ;------------------------------------------------------------------------------
@@ -290,7 +283,7 @@ rtsB1:
 ; Console output routine
 ; Use the "primaryIO" flag to determine which output port to send a character.
 ;------------------------------------------------------------------------------
-conout:		PUSH	AF		; Store character
+conout:	PUSH	AF		; Store character
 		LD	A,(primaryIO)
 		CP	0
 		JR	NZ,conoutB1
@@ -358,7 +351,7 @@ ckincharB:
 ; Filtered Character I/O
 ;------------------------------------------------------------------------------
 
-RDCHR		RST	10H
+RDCHR	RST	10H
 		CP	LF
 		JR	Z,RDCHR		; Ignore LF
 		CP	ESC
@@ -366,7 +359,7 @@ RDCHR		RST	10H
 		LD	A,CTRLC		; Change ESC to CTRL-C
 RDCHR1	RET
 
-WRCHR		CP	CR
+WRCHR	CP	CR
 		JR	Z,WRCRLF	; When CR, write CRLF
 		CP	CLS
 		JR	Z,WR		; Allow write of "CLS"
@@ -375,7 +368,7 @@ WRCHR		CP	CR
 WR		RST	08H
 NOWR		RET
 
-WRCRLF		LD	A,CR
+WRCRLF	LD	A,CR
 		RST	08H
 		LD	A,LF
 		RST	08H
@@ -386,7 +379,7 @@ WRCRLF		LD	A,CR
 ;------------------------------------------------------------------------------
 ; Initialise hardware and start main loop
 ;------------------------------------------------------------------------------
-INIT		LD   SP,STACK		; Set the Stack Pointer
+INIT	LD   SP,STACK		; Set the Stack Pointer
 
 		LD	HL,serABuf
 		LD	(serAInPtr),HL
@@ -514,25 +507,25 @@ spacePressed:
 ;------------------------------------------------------------------------------
 ; Monitor command loop
 ;------------------------------------------------------------------------------
-MAIN  		LD   HL,MAIN	; Save entry point for Monitor	
-		PUSH HL		; This is the return address
-MAIN0		CALL TXCRLF	; Entry point for Monitor, Normal	
-		LD   A,'>'	; Get a ">"	
-		RST 08H		; print it
+MAIN  	LD   HL,MAIN	; Save entry point for Monitor	
+		PUSH HL			; This is the return address
+MAIN0	CALL TXCRLF		; Entry point for Monitor, Normal	
+		LD   A,'>'		; Get a ">"	
+		RST 08H			; print it
 
-MAIN1		CALL RDCHR	; Get a character from the input port
-		CP   ' '	; <spc> or less? 	
+MAIN1	CALL RDCHR		; Get a character from the input port
+		CP   ' '		; <spc> or less? 	
 		JR   C,MAIN1	; Go back
 	
-		CP   ':'	; ":"?
-		JP   Z,LOAD	; First character of a HEX load
+		CP   ':'		; ":"?
+		JP   Z,LOAD		; First character of a HEX l	oad
 
-		CALL WRCHR	; Print char on console
+		CALL WRCHR		; Print char on console
 
 		CP   '?'
-		JP   Z,HELP
+		JP   Z,	HELP
 
-		AND  $5F	; Make character uppercase
+		AND  $5F		; Make character uppercase
 
 		CP   'R'
 		JP   Z,RST00
@@ -542,6 +535,9 @@ MAIN1		CALL RDCHR	; Get a character from the input port
 
 		CP   'G'
 		JP   Z,GOTO
+
+		CP   'M'
+		JP   Z,MEMDUMP
 
 		CP   'X'
 		JP   Z,CPMLOAD
@@ -553,7 +549,7 @@ MAIN1		CALL RDCHR	; Get a character from the input port
 ;------------------------------------------------------------------------------
 ; Print string of characters to Serial A until byte=$00, WITH CR, LF
 ;------------------------------------------------------------------------------
-PRINT		LD   A,(HL)	; Get character
+PRINT	LD   A,(HL)	; Get character
 		OR   A		; Is it $00 ?
 		RET  Z		; Then RETurn on terminator
 		RST  08H	; Print it
@@ -561,17 +557,60 @@ PRINT		LD   A,(HL)	; Get character
 		JR   PRINT	; Continue until $00
 
 
-TXCRLF		LD   A,$0D	; 
+TXCRLF	LD   A,$0D	; 
 		RST  08H	; Print character 
 		LD   A,$0A	; 
 		RST  08H	; Print character
 		RET
 
 ;------------------------------------------------------------------------------
+; Print A as two hexadecimal digits
+;------------------------------------------------------------------------------
+PRINT_HEX8:
+        PUSH AF
+
+        RRCA
+        RRCA
+        RRCA
+        RRCA
+        AND  $0F
+        CALL HEXDIGIT
+
+        POP  AF
+        AND  $0F
+
+HEXDIGIT:
+        ADD  A,'0'
+        CP   '9'+1
+        JR   C,HEXOUT
+
+        ADD  A,7
+
+HEXOUT:
+        RST  08H
+        RET
+
+;------------------------------------------------------------------------------
+; Print HL as four hexadecimal digits
+; HL preserved
+;------------------------------------------------------------------------------
+PRINT_HEX16:
+        PUSH HL
+
+        LD   A,H
+        CALL PRINT_HEX8
+
+        LD   A,L
+        CALL PRINT_HEX8
+
+        POP  HL
+        RET
+
+;------------------------------------------------------------------------------
 ; Get a character from the console, must be $20-$7F to be valid (no control characters)
 ; <Ctrl-c> and <SPACE> breaks with the Zero Flag set
 ;------------------------------------------------------------------------------	
-GETCHR		CALL RDCHR	; RX a Character
+GETCHR	CALL RDCHR	; RX a Character
 		CP   $03	; <ctrl-c> User break?
 		RET  Z			
 		CP   $20	; <space> or better?
@@ -582,7 +621,7 @@ GETCHR		CALL RDCHR	; RX a Character
 ; Moves them into B and C, converts them into a byte value in A and updates a
 ; Checksum value in E
 ;------------------------------------------------------------------------------
-GET2		CALL GETCHR	; Get us a valid character to work with
+GET2	CALL GETCHR	; Get us a valid character to work with
 		LD   B,A	; Load it in B
 		CALL GETCHR	; Get us another character
 		LD   C,A	; load it in C
@@ -596,11 +635,11 @@ GET2		CALL GETCHR	; Get us a valid character to work with
 ;------------------------------------------------------------------------------
 ; Gets four Hex characters from the console, converts them to values in HL
 ;------------------------------------------------------------------------------
-GETHL		LD   HL,$0000	; Gets xxxx but sets Carry Flag on any Terminator
-		CALL ECHO	; RX a Character
-		CP   $0D	; <CR>?
+GETHL	LD   HL,$0000	; Gets xxxx but sets Carry Flag on any Terminator
+		CALL ECHO		; RX a Character
+		CP   $0D		; <CR>?
 		JR   NZ,GETX2	; other key		
-SETCY		SCF		; Set Carry Flag
+SETCY	SCF				; Set Carry Flag
 		RET             ; and Return to main program		
 ;------------------------------------------------------------------------------
 ; This routine converts last four hex characters (0-9 A-F) user types into a value in HL
@@ -660,7 +699,7 @@ ECHO	CALL	RDCHR
 GOTO	CALL GETHL		; ENTRY POINT FOR <G>oto addr. Get XXXX from user.
 		RET  C			; Return if invalid       	
 		PUSH HL
-		RET			; Jump to HL address value
+		RET				; Jump to HL address value
 
 ;------------------------------------------------------------------------------
 ; LOAD Intel Hex format file from the console.
@@ -673,37 +712,124 @@ GOTO	CALL GETHL		; ENTRY POINT FOR <G>oto addr. Get XXXX from user.
 ; 6) Checksum Field - Sum of all byte values from Record Length to and 
 ;   including Checksum Field = 0 ]
 ;------------------------------------------------------------------------------	
-LOAD	LD   E,0	; First two Characters is the Record Length Field
-		CALL GET2	; Get us two characters into BC, convert it to a byte <A>
-		LD   D,A	; Load Record Length count into D
-		CALL GET2	; Get next two characters, Memory Load Address <H>
-		LD   H,A	; put value in H register.
-		CALL GET2	; Get next two characters, Memory Load Address <L>
-		LD   L,A	; put value in L register.
-		CALL GET2	; Get next two characters, Record Field Type
-		CP   $01	; Record Field Type 00 is Data, 01 is End of File
-		JR   NZ,LOAD2	; Must be the end of that file
-		CALL GET2	; Get next two characters, assemble into byte
-		LD   A,E	; Recall the Checksum byte
-		AND  A		; Is it Zero?
-		JR   Z,LOAD00	; Print footer reached message
-		JR   LOADERR	; Checksums don't add up, Error out
-		
-LOAD2	LD   A,D	; Retrieve line character counter	
-		AND  A		; Are we done with this line?
-		JR   Z,LOAD3	; Get two more ascii characters, build a byte and checksum
-		CALL GET2	; Get next two chars, convert to byte in A, checksum it
-		LD   (HL),A	; Move converted byte in A to memory location
-		INC  HL		; Increment pointer to next memory location	
-		LD   A,'.'	; Print out a "." for every byte loaded
-		RST  08H	;
-		DEC  D		; Decrement line character counter
-		JR   LOAD2	; and keep loading into memory until line is complete
-		
-LOAD3	CALL GET2	; Get two chars, build byte and checksum
-		LD   A,E	; Check the checksum value
-		AND  A		; Is it zero?
-		RET  Z
+;------------------------------------------------------------------------------
+; LOAD Intel HEX format file from console
+;
+; Supported:
+;   type 00 - DATA, write to memory
+;   type 01 - EOF
+;
+; Other record types (02,03,04,05...) are read and checksum-checked,
+; but NOT written to memory.
+;------------------------------------------------------------------------------
+
+LOAD:
+        LD   E,0            ; checksum accumulator
+
+        ; Record length
+        CALL GET2
+        LD   D,A            ; D = number of data bytes
+
+        ; Load address high byte
+        CALL GET2
+        LD   H,A
+
+        ; Load address low byte
+        CALL GET2
+        LD   L,A
+
+        ; Record type
+        CALL GET2
+
+        CP   $00            ; DATA record?
+        JR   Z,LOAD2
+
+        CP   $01            ; EOF record?
+        JR   Z,LOAD_EOF
+
+        ; Any other Intel HEX record type:
+        ; consume it, but DO NOT write to RAM
+        JR   LOAD_SKIP
+
+;------------------------------------------------------------------------------
+; Type 00 - DATA record
+; D  = number of bytes
+; HL = destination address
+;------------------------------------------------------------------------------
+
+LOAD2:
+        LD   A,D
+        AND  A
+        JR   Z,LOAD3
+
+        CALL GET2           ; get next data byte
+        LD   (HL),A         ; write it to memory
+        INC  HL
+
+        LD   A,'.'
+        RST  08H
+
+        DEC  D
+        JR   LOAD2
+
+
+;------------------------------------------------------------------------------
+; End of DATA record - read and verify checksum
+;------------------------------------------------------------------------------
+
+LOAD3:
+        CALL GET2           ; checksum byte
+
+        LD   A,E
+        AND  A
+        RET  Z              ; checksum OK
+
+        JR   LOADERR
+
+
+;------------------------------------------------------------------------------
+; Type 01 - End Of File
+;------------------------------------------------------------------------------
+
+LOAD_EOF:
+        CALL GET2           ; checksum byte
+
+        LD   A,E
+        AND  A
+        JR   Z,LOAD00       ; checksum OK, print "Load complete."
+
+        JR   LOADERR
+
+
+;------------------------------------------------------------------------------
+; Unsupported Intel HEX record type
+;
+; Important: read all data bytes so the serial stream remains synchronized,
+; but do NOT write them to memory.
+;------------------------------------------------------------------------------
+
+LOAD_SKIP:
+        LD   A,D
+        AND  A
+        JR   Z,LOAD_SKIP_CHECKSUM
+
+
+LOAD_SKIP_LOOP:
+        CALL GET2           ; read byte, update checksum
+                            ; but DON'T do LD (HL),A
+
+        DEC  D
+        JR   NZ,LOAD_SKIP_LOOP
+
+
+LOAD_SKIP_CHECKSUM:
+        CALL GET2           ; read checksum byte
+
+        LD   A,E
+        AND  A
+        RET  Z              ; record ignored, checksum OK
+
+        JR   LOADERR
 
 LOADERR	LD   HL,CKSUMERR  ; Get "Checksum Error" message
 		CALL PRINT	; Print Message from (HL) and terminate the load
@@ -869,9 +995,10 @@ cfWait1:
 
 ;------------------------------------------------------------------------------
 
-SIGNON	DB	"Z80 SBC Boot ROM 1.1"
-		DB	" by G. Searle"
+SIGNON	DB	"Z80 SBC Boot ROM 1.2"
+		DB	" by G. Searle / D. Chertkov"
 		DB	$0D,$0A
+		INCLUDE "build_info.inc"			; add the build info string
 		DB	"Type ? for options"
 		DB	$0D,$0A,$00
 
@@ -903,7 +1030,11 @@ HLPTXT
 		DB	$0D,$0A
 		DB	":nnnnnn...  - Load Intel-Hex file record"
 		DB	$0D,$0A
-        	DB   $00
+        DB  "Mxxxx       - Memory dump"
+        DB  $0D,$0A
+		DB   $00
+
+		include 'memview.asm'
 
 ; ------------------------------------------------------------------------------
 ; Fill unused ROM space up to 4000h with erased EPROM value
@@ -911,4 +1042,3 @@ HLPTXT
 
         DS $4000-$, $FF
 ; END
-

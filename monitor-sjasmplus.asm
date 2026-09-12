@@ -26,75 +26,77 @@
 ; General Equates
 ;------------------------------------------------------------------------------
 
-CR		EQU	0DH
-LF		EQU	0AH
-ESC		EQU	1BH
-CTRLC		EQU	03H
-CLS		EQU	0CH
+CR				EQU	0DH
+LF				EQU	0AH
+ESC				EQU	1BH
+CTRLC			EQU	03H
+CLS				EQU	0CH
 
 ; CF registers
-CF_DATA		EQU	$10
-CF_FEATURES	EQU	$11
-CF_ERROR	EQU	$11
-CF_SECCOUNT	EQU	$12
-CF_SECTOR	EQU	$13
-CF_CYL_LOW	EQU	$14
-CF_CYL_HI	EQU	$15
-CF_HEAD		EQU	$16
-CF_STATUS	EQU	$17
-CF_COMMAND	EQU	$17
-CF_LBA0		EQU	$13
-CF_LBA1		EQU	$14
-CF_LBA2		EQU	$15
-CF_LBA3		EQU	$16
+CF_DATA			EQU	$10
+CF_FEATURES		EQU	$11
+CF_ERROR		EQU	$11
+CF_SECCOUNT		EQU	$12
+CF_SECTOR		EQU	$13
+CF_CYL_LOW		EQU	$14
+CF_CYL_HI		EQU	$15
+CF_HEAD			EQU	$16
+CF_STATUS		EQU	$17
+CF_COMMAND		EQU	$17
+CF_LBA0			EQU	$13
+CF_LBA1			EQU	$14
+CF_LBA2			EQU	$15
+CF_LBA3			EQU	$16
 
 ;CF Features
-CF_8BIT		EQU	1
-CF_NOCACHE	EQU	082H
+CF_8BIT			EQU	1
+CF_NOCACHE		EQU	082H
 ;CF Commands
-CF_READ_SEC	EQU	020H
+CF_READ_SEC		EQU	020H
 CF_WRITE_SEC	EQU	030H
-CF_SET_FEAT	EQU 	0EFH
+CF_SET_FEAT		EQU 0EFH
 
 
-loadAddr	EQU	0D000h	; CP/M load address
-numSecs		EQU	24	; Number of 512 sectors to be loaded
+loadAddr		EQU	0D000h					; CP/M load address
+numSecs			EQU	24						; Number of 512 sectors to be loaded
 
 
 ;BASIC cold and warm entry points
-BASCLD		EQU	$2000
-BASWRM		EQU	$2003
+BASCLD			EQU	$2000
+BASWRM			EQU	$2003
 
-SER_BUFSIZE	EQU	40H
+SER_BUFSIZE		EQU	40H
 SER_FULLSIZE	EQU	30H
 SER_EMPTYSIZE	EQU	5
 
-RTS_HIGH	EQU	0E8H
-RTS_LOW		EQU	0EAH
+RTS_HIGH		EQU	0E8H
+RTS_LOW			EQU	0EAH
 
-SIOA_D		EQU	$00
-SIOA_C		EQU	$02
-SIOB_D		EQU	$01
-SIOB_C		EQU	$03
+SIOA_D			EQU	$00
+SIOA_C			EQU	$02
+SIOB_D			EQU	$01
+SIOB_C			EQU	$03
 
 ; RAM workspace used by the monitor (addresses only; not emitted into ROM)
-serABuf        EQU $4000
-serAInPtr      EQU serABuf + SER_BUFSIZE
-serARdPtr      EQU serAInPtr + 2
-serABufUsed    EQU serARdPtr + 2
-serBBuf        EQU serABufUsed + 1
-serBInPtr      EQU serBBuf + SER_BUFSIZE
-serBRdPtr      EQU serBInPtr + 2
-serBBufUsed    EQU serBRdPtr + 2
+serABuf        	EQU $4000
+serAInPtr      	EQU serABuf + SER_BUFSIZE
+serARdPtr      	EQU serAInPtr + 2
+serABufUsed    	EQU serARdPtr + 2
+serBBuf        	EQU serABufUsed + 1
+serBInPtr      	EQU serBBuf + SER_BUFSIZE
+serBRdPtr      	EQU serBInPtr + 2
+serBBufUsed    	EQU serBRdPtr + 2
 
-primaryIO      EQU serBBufUsed + 1
-secNo          EQU primaryIO + 1
-dmaAddr        EQU secNo + 1
+primaryIO      	EQU serBBufUsed + 1
+secNo          	EQU primaryIO + 1
+dmaAddr        	EQU secNo + 1
 
-stackSpace     EQU dmaAddr + 2
-STACK          EQU stackSpace + 32
-baseaddr	   EQU STACK					; memview base address variable (2 bytes)
-											; the next variable should use the baseaddr+2 address!
+stackSpace     	EQU dmaAddr + 2
+STACK          	EQU stackSpace + 32
+baseaddr	   	EQU STACK					; memview base address variable (2 bytes)
+portno			EQU baseaddr+2				; porttest port number variable (1 byte)		
+value			EQU portno+1				; porttest value variable (1 byte)
+											; the next variable should use the value+1 address!
 
 
 ;------------------------------------------------------------------------------
@@ -377,7 +379,7 @@ WRCHR	CP	CR
 		JR	Z,WRCRLF	; When CR, write CRLF
 		CP	CLS
 		JR	Z,WR		; Allow write of "CLS"
-		CP	' '		; Don't write out any other control codes
+		CP	' '			; Don't write out any other control codes
 		JR	C,NOWR		; ie. < space
 WR		RST	08H
 NOWR		RET
@@ -403,8 +405,8 @@ INIT	LD   SP,STACK		; Set the Stack Pointer
 		LD	(serBInPtr),HL
 		LD	(serBRdPtr),HL
 
-		xor	a			;0 to accumulator
-		LD	(serABufUsed),A
+		XOR A				;0 to accumulator
+		LD (serABufUsed),A
 		LD	(serBBufUsed),A
 
 ;	Initialise SIO
@@ -472,14 +474,14 @@ INIT	LD   SP,STACK		; Set the Stack Pointer
 		EI
 
 		; Display the "Press space to start" message on both consoles
-		LD	A,$00
-		LD	(primaryIO),A
-    	LD   	HL,INITTXT
-		CALL 	PRINT
-		LD	A,$01
-		LD	(primaryIO),A
-    	LD   	HL,INITTXT
-		CALL 	PRINT
+		LD A,$00
+		LD (primaryIO),A
+		LD HL,INITTXT
+		CALL PRINT
+		LD A,$01
+		LD (primaryIO),A
+		LD HL,INITTXT
+		CALL PRINT
 
 		; Wait until space is in one of the buffers to determine the active console
 
@@ -551,7 +553,10 @@ MAIN1	CALL RDCHR		; Get a character from the input port
 		JP   Z,GOTO
 
 		CP   'M'
-		JP   Z,MEMDUMP
+		JP   Z,MEMDUMP			; Memory viewer
+
+		CP   'P'
+		JP   Z,PORTTEST			; Port test
 
 		CP   'X'
 		JP   Z,CPMLOAD
@@ -1046,9 +1051,12 @@ HLPTXT
 		DB	$0D,$0A
         DB  "Mxxxx       - Memory dump"
         DB  $0D,$0A
+		DB  "P           - Port test", 13, 10
+		DB  "Gxxxx       - Goto address", 13, 10
 		DB   $00
 
-		include 'memview.asm'
+		include 'memview.asm'			; Include the memory viewer code
+		include 'porttest.asm'			; Include the port test code
 
 ; ------------------------------------------------------------------------------
 ; Fill unused ROM space up to 4000h with erased EPROM value

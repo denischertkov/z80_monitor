@@ -19,7 +19,10 @@
  
 MEMDUMP:
         CALL GETHL
-        RET C				; exit if empty address (C-flag set by GETHL)
+        ; RET C				; exit if empty address (C-flag set by GETHL)
+        JR NC, setaddr                  ; if defined - use it, otherwise start from 0000h
+        LD H,00h                        ; If not defined - start from 0000h
+setaddr:
         LD L,00h                        ; round the address down to the start of a 256-byte page
         LD (baseaddr),HL
 

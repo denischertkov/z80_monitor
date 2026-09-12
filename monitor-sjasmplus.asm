@@ -1053,6 +1053,6 @@ HLPTXT
 ; ------------------------------------------------------------------------------
 ; Fill unused ROM space up to 4000h with erased EPROM value
 ; ------------------------------------------------------------------------------
-
-        DS $4000-$, $FF
+		; uncoment if you want to fill the unused ROM space with $FF
+        ; DS $4000-$, $FF
 ; END

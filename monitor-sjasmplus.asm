@@ -1,9 +1,21 @@
 ;==================================================================================
+; 
 ; Based on the original Z80 Monitor Rom by Grant Searle (http://searle.hostei.com/grant/index.html)
 ; Added the new memory viewer and build info string to the signon message.
 ; Fix Intel HEX loading for non-data record types (0000h and 0001h RAM address corruption).
 ; Denis Chertkov, denis@chertkov.info, 20260912
 ;
+;==================================================================================
+;
+; Contents of this file are copyright Grant Searle
+; HEX routines from Joel Owens.
+;
+; You have permission to use this for NON COMMERCIAL USE ONLY
+; If you wish to use it elsewhere, please include an acknowledgement to myself.
+;
+; http://searle.hostei.com/grant/index.html
+;
+; eMail: home.micros01@btinternet.com
 ;==================================================================================
 
 ;------------------------------------------------------------------------------

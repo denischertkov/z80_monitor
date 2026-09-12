@@ -93,7 +93,8 @@ dmaAddr        EQU secNo + 1
 
 stackSpace     EQU dmaAddr + 2
 STACK          EQU stackSpace + 32
-baseaddr	   EQU STACK + 2				; memview base address variable
+baseaddr	   EQU STACK					; memview base address variable (2 bytes)
+											; the next variable should use the baseaddr+2 address!
 
 
 ;------------------------------------------------------------------------------
@@ -117,9 +118,10 @@ RST00	DI				;Disable INTerrupts
 RST08		JP	conout
 		NOP
 		NOP
-		NOP
-		NOP
-		NOP
+		; NOP
+		; NOP
+		; NOP
+		DB 'ROM'		; ROM mark instead of NOPs to make it easier to find the ROM in memory
 ;------------------------------------------------------------------------------
 ; RX a character from buffer wait until char ready.
 ;------------------------------------------------------------------------------
@@ -1051,6 +1053,6 @@ HLPTXT
 ; ------------------------------------------------------------------------------
 ; Fill unused ROM space up to 4000h with erased EPROM value
 ; ------------------------------------------------------------------------------
-
-        DS $4000-$, $FF
+		; uncoment if you want to fill the unused ROM space with $FF
+        ; DS $4000-$, $FF
 ; END

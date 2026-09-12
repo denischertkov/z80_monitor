@@ -20,3 +20,4 @@ build/
 *.swp
 .vscode/settings.json
 .vscode/tasks.json
+build_info.inc

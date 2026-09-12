@@ -118,9 +118,10 @@ RST00	DI				;Disable INTerrupts
 RST08		JP	conout
 		NOP
 		NOP
-		NOP
-		NOP
-		NOP
+		; NOP
+		; NOP
+		; NOP
+		DB 'ROM'		; ROM mark instead of NOPs to make it easier to find the ROM in memory
 ;------------------------------------------------------------------------------
 ; RX a character from buffer wait until char ready.
 ;------------------------------------------------------------------------------

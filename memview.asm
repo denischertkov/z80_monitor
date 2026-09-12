@@ -88,7 +88,7 @@ prev_page:
 
 goto_addr:
         ld hl,goto_msg
-        call print
+        call PRINT
 
         ld hl,0000h
         ld b,4
@@ -169,10 +169,10 @@ draw_page:
         ; Clear screen + cursor home
 
         ld hl,cls
-        call print
+        call PRINT
 
         ld hl,title
-        call print
+        call PRINT
 
         ; Display base address in heading
 
@@ -180,7 +180,7 @@ draw_page:
         call PRINT_HEX16
 
         ld hl,title2
-        call print
+        call PRINT
 
         ; HL = first memory byte
 
@@ -290,7 +290,7 @@ ascii_out:
         ; command help
 
         ld hl,help
-        call print
+        call PRINT
 
         ret
 
@@ -334,34 +334,34 @@ ascii_out:
 ;         and 0fh
 
 
-hex_digit:
-        add a,'0'
+; hex_digit:
+;         add a,'0'
 
-        cp '9'+1
-        jr c,hex_out
+;         cp '9'+1
+;         jr c,hex_out
 
-        add a,7
+;         add a,7
 
 
-hex_out:
-        rst 08h
-        ret
+; hex_out:
+;         rst 08h
+;         ret
 
 
 ; ---------------------------------------------------------
 ; Print zero-terminated string
 ; HL -> string
 ; ---------------------------------------------------------
+; Will use Monitor print routine
+; print:
+;         ld a,(hl)
+;         or a
+;         ret z
 
-print:
-        ld a,(hl)
-        or a
-        ret z
+;         rst 08h
 
-        rst 08h
-
-        inc hl
-        jr print
+;         inc hl
+;         jr print
 
 
 ; ---------------------------------------------------------

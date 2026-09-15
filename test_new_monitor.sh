@@ -32,7 +32,7 @@ BUILD_TIME=$(date '+%H:%M:%S')
 
 cat > build_info.inc <<EOF
 BUILD_INFO:
-        DB "Build: $BUILD_DATE $BUILD_TIME",13,10,0
+        DB "Build: $BUILD_DATE $BUILD_TIME",13,10
 EOF
 
 echo "Assembling Monitor..."
